@@ -1,0 +1,1 @@
+# examdroid-license
