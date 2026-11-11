@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendaftaran Lisensi EXAMDROID</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; color: #333; padding: 20px; }
+        .container { max-width: 500px; margin: 40px auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        h2 { color: #0d47a1; margin-bottom: 8px; font-size: 22px; text-align: center; }
+        .subtitle { font-size: 13px; color: #666; text-align: center; margin-bottom: 25px; line-height: 1.4; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #444; }
+        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        input:focus { border-color: #0d47a1; }
+        .payment-info { background: #e3f2fd; padding: 15px; border-radius: 8px; font-size: 13px; color: #0d47a1; margin-bottom: 20px; line-height: 1.5; }
+        .payment-info b { display: block; margin-bottom: 4px; }
+        button { width: 100%; background-color: #0d47a1; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        button:hover { background-color: #1565c0; }
+        button:disabled { background-color: #b0bec5; cursor: not-allowed; }
+        #loading { display: none; text-align: center; margin-top: 15px; color: #0d47a1; font-size: 14px; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Aktivasi Lisensi EXAMDROID</h2>
+    <p class="subtitle">Silakan isi data sekolah dan unggah bukti transfer pembayaran Anda untuk mendapatkan kode lisensi resmi.</p>
+
+    <div class="payment-info">
+        <b>Instruksi Pembayaran DANA:</b>
+        Transfer biaya langganan ke akun DANA: <b>0878-7844-4938</b> (a.n. Miftahudin / MIF Computer).<br>
+        *Sertakan nominal transfer dengan kode unik yang valid.
+    </div>
+
+    <form id="licenseForm" onsubmit="submitForm(event)">
+        <div class="form-group">
+            <label>Nama Sekolah / Instansi</label>
+            <input type="text" id="namaSekolah" placeholder="Contoh: SMAN 1 Warunggunung" required>
+        </div>
+        <div class="form-group">
+            <label>NPSN (Nomor Pokok Sekolah Nasional)</label>
+            <input type="text" id="npsn" placeholder="Masukkan 8 digit NPSN" required>
+        </div>
+        <div class="form-group">
+            <label>Nomor DANA Pengirim</label>
+            <input type="text" id="noDana" placeholder="Contoh: 081987654321" required>
+        </div>
+        <div class="form-group">
+            <label>Jumlah Transfer (Rp)</label>
+            <input type="number" id="jumlahTransfer" placeholder="Contoh: 500123" required>
+        </div>
+        <div class="form-group">
+            <label>Upload Bukti Transfer (Screenshot DANA)</label>
+            <input type="file" id="buktiTransfer" accept="image/*" required>
+        </div>
+
+        <button type="submit" id="submitBtn">Kirim Bukti Pembayaran</button>
+        <div id="loading">Sedang mengunggah data & bukti transfer... Mohon tunggu.</div>
+    </form>
+</div>
+
+<script>
+    // URL Web App dari Google Apps Script Anda
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz9xFcIrPpDgHsbHoi5VqVC5ZveKTl319aK6o809ZjzK6EVtc0s2Cwhbu4kd8P71yqPBRQ/exec";
+
+    function submitForm(event) {
+        event.preventDefault();
+
+        const fileInput = document.getElementById('buktiTransfer');
+        const file = fileInput.files[0];
+        if (!file) {
+            alert("Harap unggah foto bukti transfer!");
+            return;
+        }
+
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('loading').style.display = 'block';
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function () {
+            const base64String = reader.result.split(',')[1];
+            
+            const payload = {
+                namaSekolah: document.getElementById('namaSekolah').value,
+                npsn: document.getElementById('npsn').value,
+                noDana: document.getElementById('noDana').value,
+                jumlahTransfer: document.getElementById('jumlahTransfer').value,
+                fileData: base64String,
+                fileName: file.name,
+                fileMimeType: file.type
+            };
+
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                if (data.status === 'success') {
+                    alert("Berhasil! Bukti transfer telah dikirim. Admin akan segera memverifikasi dan mengirimkan kode lisensi ke Anda.");
+                    document.getElementById('licenseForm').reset();
+                } else {
+                    alert("Gagal: " + data.message);
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                alert("Terjadi kesalahan jaringan: " + error);
+            });
+        };
+    }
+</script>
+
+</body>
+</html>
